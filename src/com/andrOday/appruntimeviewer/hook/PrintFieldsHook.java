@@ -3,6 +3,7 @@ package com.andrOday.appruntimeviewer.hook;
 import com.alibaba.fastjson.JSON;
 import com.andrOday.appruntimeviewer.util.LogUtil;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedBridge;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -32,7 +33,8 @@ public class PrintFieldsHook extends XC_MethodHook {
                             try {
                                 sb.append(target + "=" + JSON.toJSONString(it.get(object)) + "\n");
                             } catch (Exception e) {
-                                //json exception
+                                sb.append(target + "=" + "json error\n");
+                                XposedBridge.log(e);
                             }
                             count++;
                         }
