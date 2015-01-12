@@ -1,6 +1,6 @@
 package com.andrOday.appruntimeviewer.hook;
 
-import com.alibaba.fastjson.JSON;
+import com.andrOday.appruntimeviewer.util.JsonUtil;
 import com.andrOday.appruntimeviewer.util.LogUtil;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
@@ -19,7 +19,7 @@ public class PrintFieldsHook extends XC_MethodHook {
     protected void beforeHookedMethod(MethodHookParam param) {
         Object object = param.thisObject;
         StringBuilder sb = new StringBuilder();
-        sb.append("fields:\n");
+        sb.append("Before method execute,this object's fields:\n");
         int count = 0;
         if (object != null) {
             Class clazz = object.getClass();
@@ -31,9 +31,9 @@ public class PrintFieldsHook extends XC_MethodHook {
                         String f_name = it.getName();
                         if (target.equals(f_name)) {
                             try {
-                                sb.append(target + "=" + JSON.toJSONString(it.get(object)) + "\n");
+                                sb.append(target + "=" + JsonUtil.toJSONString(it.get(object)) + "\n");
                             } catch (Exception e) {
-                                sb.append(target + "=" + "json error\n");
+                                sb.append(target + "=" + "error\n");
                                 XposedBridge.log(e);
                             }
                             count++;
@@ -48,6 +48,6 @@ public class PrintFieldsHook extends XC_MethodHook {
             }
         }
         sb.append("\n");
-        LogUtil.log(sb.toString());
+        LogUtil.info_log(sb.toString());
     }
 }

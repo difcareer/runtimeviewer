@@ -2,15 +2,13 @@ package com.andrOday.appruntimeviewer;
 
 import android.app.Application;
 import android.util.Log;
-import com.alibaba.fastjson.JSON;
+import com.andrOday.appruntimeviewer.data.ProClass;
+import com.andrOday.appruntimeviewer.data.ProMethod;
 import com.andrOday.appruntimeviewer.hook.PrintFieldsHook;
 import com.andrOday.appruntimeviewer.hook.PrintMethodParametersHook;
 import com.andrOday.appruntimeviewer.hook.PrintMethodStacksHook;
 import com.andrOday.appruntimeviewer.hook.PrintObjectHook;
-import com.andrOday.appruntimeviewer.util.CmdUtil;
-import com.andrOday.appruntimeviewer.util.ConfigUtil;
-import com.andrOday.appruntimeviewer.util.HookUtil;
-import com.andrOday.appruntimeviewer.util.LogUtil;
+import com.andrOday.appruntimeviewer.util.*;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
@@ -36,7 +34,7 @@ public class RunTimeViewer implements IXposedHookLoadPackage {
                         public void afterHookedMethod(MethodHookParam param) {
                             targetApplication = (Application) param.thisObject;
                             LogUtil.init();
-                            LogUtil.log(appClassName + " loaded");
+                            LogUtil.event_log(appClassName + " loaded");
                             ConfigUtil.parse();
                             if (ConfigUtil.hasConfig()) {
                                 Method[] methods = HookUtil.class.getDeclaredMethods();
@@ -46,34 +44,36 @@ public class RunTimeViewer implements IXposedHookLoadPackage {
                                     if ("findAndHookMethod".equals(it.getName())) {
                                         Class<?>[] paraTypes = it.getParameterTypes();
                                         if ("java.lang.String".equals(paraTypes[0].getCanonicalName())) {
-                                            for (List<String> hook : ConfigUtil.methods) {
-                                                String type = hook.get(0);
-                                                String clazz = hook.get(1);
-                                                String method = hook.get(2);
-                                                Object[] parameters = buildParameters(hook);
-                                                String[] cmds = type.split("\\|");
-                                                for (String cmd : cmds) {
-                                                    if (CmdUtil.printParameters.equals(cmd)) {
-                                                        parameters[parameters.length - 1] = new PrintMethodParametersHook();
-                                                        doHook(cmd, it, clazz, lpparam.classLoader, method, hook, parameters);
-                                                    } else if (CmdUtil.printStacks.equals(cmd)) {
-                                                        parameters[parameters.length - 1] = new PrintMethodStacksHook();
-                                                        doHook(cmd, it, clazz, lpparam.classLoader, method, hook, parameters);
-                                                    } else if (CmdUtil.printObject.equals(cmd)) {
-                                                        parameters[parameters.length - 1] = new PrintObjectHook();
-                                                        doHook(cmd, it, clazz, lpparam.classLoader, method, hook, parameters);
-                                                    } else if (CmdUtil.printFields.equals(cmd)) {
-                                                        String raw = (String) parameters[parameters.length - 2];
-                                                        String[] parts = raw.split("\\|");
-                                                        PrintFieldsHook printFieldsHook = new PrintFieldsHook();
-                                                        printFieldsHook.fields = Arrays.asList(parts);
-                                                        Object[] newParameters = new Object[parameters.length - 1];
-                                                        System.arraycopy(parameters, 0, newParameters, 0, newParameters.length);
-                                                        doHook(cmd, it, clazz, lpparam.classLoader, method, hook, newParameters);
+                                            for (ProClass proClass : ConfigUtil.proClasses) {
+                                                if (proClass.getMethods() != null) {
+                                                    for (ProMethod proMethod : proClass.getMethods()) {
+                                                        List<String> parameters = proMethod.getParameters();
+                                                        List<String> fields = proMethod.getFields();
+                                                        List<String> cmds = proMethod.getCmds();
+                                                        Object[] tmp = parameters.toArray();
+                                                        Object[] pass_param = new Object[tmp.length + 1];
+                                                        System.arraycopy(tmp, 0, pass_param, 0, tmp.length);
+                                                        for (String cmd : cmds) {
+                                                            if (CmdUtil.printParameters.equals(cmd)) {
+                                                                pass_param[pass_param.length - 1] = new PrintMethodParametersHook();
+                                                            } else if (CmdUtil.printStacks.equals(cmd)) {
+                                                                pass_param[pass_param.length - 1] = new PrintMethodStacksHook();
+                                                            } else if (CmdUtil.printObject.equals(cmd)) {
+                                                                pass_param[pass_param.length - 1] = new PrintObjectHook();
+                                                            } else if (CmdUtil.printFields.equals(cmd)) {
+                                                                PrintFieldsHook printFieldsHook = new PrintFieldsHook();
+                                                                printFieldsHook.fields = fields;
+                                                                pass_param[pass_param.length - 1] = printFieldsHook;
+                                                            } else {
+                                                                pass_param = null;
+                                                            }
+                                                            doHook(cmd, it, proClass.getClazz(), lpparam.classLoader, proMethod, pass_param);
+                                                        }
                                                     }
+
                                                 }
+
                                             }
-                                            break;
                                         }
                                     }
                                 }
@@ -90,28 +90,15 @@ public class RunTimeViewer implements IXposedHookLoadPackage {
         }
     }
 
-    public void doHook(String cmd, Method findAndHookMethod, String clazz, ClassLoader classLoader, String method, List<String> protoMethod, Object[] parameters) {
-        try {
-            findAndHookMethod.invoke(null, clazz, classLoader, method, parameters);
-            LogUtil.log(cmd + " hooked:" + JSON.toJSONString(protoMethod));
-        } catch (Exception e) {
-            LogUtil.log("hook method error:");
-            e.printStackTrace(LogUtil.logWriter);
+    public void doHook(String cmd, Method findAndHookMethod, String clazz, ClassLoader classLoader, ProMethod proMethod, Object[] parameters) {
+        if (parameters != null) {
+            try {
+                findAndHookMethod.invoke(null, clazz, classLoader, proMethod.getMethod(), parameters);
+                LogUtil.event_log(cmd + " already hooked -> class=" + clazz + " method=" + JsonUtil.toJSONString(proMethod));
+            } catch (Exception e) {
+                LogUtil.event_log("hook method error:");
+                e.printStackTrace(LogUtil.eventWriter);
+            }
         }
-    }
-
-    /**
-     * 原始list的格式为：[type,class,method,paramter1,...parametern]    paramter1~paramtern可以没有
-     * 多预留了一个位置，方便放置callback对象
-     *
-     * @param list
-     * @return
-     */
-    public Object[] buildParameters(List<String> list) {
-        Object[] dest = new Object[list.size() - 2];
-        if (list.size() > 3) {
-            System.arraycopy(list.toArray(), 3, dest, 0, list.size() - 3);
-        }
-        return dest;
     }
 }

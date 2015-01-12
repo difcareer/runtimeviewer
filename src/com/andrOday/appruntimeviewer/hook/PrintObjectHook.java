@@ -1,6 +1,6 @@
 package com.andrOday.appruntimeviewer.hook;
 
-import com.alibaba.fastjson.JSON;
+import com.andrOday.appruntimeviewer.util.JsonUtil;
 import com.andrOday.appruntimeviewer.util.LogUtil;
 import de.robv.android.xposed.XC_MethodHook;
 
@@ -12,9 +12,9 @@ public class PrintObjectHook extends XC_MethodHook {
     protected void beforeHookedMethod(MethodHookParam param) {
         Object obj = param.thisObject;
         StringBuilder sb = new StringBuilder();
-        sb.append("this object:\n");
-        sb.append(JSON.toJSONString(obj));
+        sb.append("Before method execute,this object:\n");
+        sb.append(JsonUtil.toJSONString(obj));
         sb.append("\n");
-        LogUtil.log(sb.toString());
+        LogUtil.info_log(sb.toString());
     }
 }

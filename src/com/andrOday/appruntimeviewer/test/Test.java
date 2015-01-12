@@ -1,16 +1,22 @@
 package com.andrOday.appruntimeviewer.test;
 
+import com.alibaba.fastjson.JSON;
+import com.andrOday.appruntimeviewer.data.ProClass;
+
 import java.lang.reflect.Method;
+import java.util.List;
 
 public class Test {
 
     public static void main(String[] args) throws Exception {
 //        print(new Test());
 //        printStack();
-        testSplit();
-        Child child = new Child();
-        Method method = getMethod(child, "parent", null);
-        method.invoke(child, null);
+//        testSplit();
+//        Child child = new Child();
+//        Method method = getMethod(child, "parent", null);
+//        method.invoke(child, null);
+//        testArray();
+        testParse();
 
     }
 
@@ -39,6 +45,31 @@ public class Test {
             }
         }
         return null;
+    }
+
+    public static void testArray(){
+        String[] str1 = new String[3];
+        String[] str2 = new String[2];
+        str1 = str2;
+        System.out.println(str1.length);
+    }
+
+    public static void testParse(){
+        String json = "[{\n" +
+                "\t\"clazz\":\"com.gurkedev.wifiprotector.WifiProtector\",\n" +
+                "\t\"methods\":[{\n" +
+                "\t                \"method\":\"xxx\",\n" +
+                "\t\t\tparameters:[\"11\",\"22\"],\n" +
+                "\t\t\t\"cmds\":[\"33\",\"44\"],\n" +
+                "\t\t\t\"fields\":[\"55\",\"66\"]\n" +
+                "\t\t}]\n" +
+                "\t\n" +
+                "\n" +
+                "}]";
+        List<ProClass> proClasses =JSON.parseArray(json, ProClass.class);
+        System.out.println(proClasses.get(0).getMethods().get(0).getCmds());
+
+
     }
 
 }

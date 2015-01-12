@@ -1,6 +1,6 @@
 package com.andrOday.appruntimeviewer.hook;
 
-import com.alibaba.fastjson.JSON;
+import com.andrOday.appruntimeviewer.util.JsonUtil;
 import com.andrOday.appruntimeviewer.util.LogUtil;
 import de.robv.android.xposed.XC_MethodHook;
 
@@ -18,19 +18,30 @@ public class PrintMethodParametersHook extends XC_MethodHook {
     public void logMethod(String type, MethodHookParam param) {
         Object[] args = param.args;
         Object thisObj = param.thisObject;
-        String thisObjClazz = (thisObj != null ? (thisObj.getClass() != null ? thisObj.getClass().getCanonicalName() : "thisObj'class is null") : "thisObj is null");
-        StringBuilder sb = new StringBuilder(type +" "+ thisObjClazz + "->" + param.method.getName() + "\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append(type + " method execute,parameters:\n");
+        if (thisObj == null) {
+            sb.append("thisObj is null\n");
+        } else if (thisObj.getClass() == null) {
+            sb.append("thisObj.getClass() is null\n");
+        } else {
+            sb.append(thisObj.getClass().getCanonicalName() + " -> " + param.method.getName() + "\n");
+        }
         if (args != null) {
-            sb.append("args:\n");
+            int i = 0;
             for (Object obj : args) {
-                String clazzName = (obj != null ? (obj.getClass() != null ? obj.getClass().getCanonicalName() : "param'class is null") : "param is null");
-                sb.append(clazzName + ":");
-                sb.append(JSON.toJSONString(obj) + "\n");
+                if (obj == null) {
+                    sb.append("args[" + i + "] is null\n");
+                } else if (obj.getClass() == null) {
+                    sb.append("args[" + i + "].getClass() is null\n");
+                } else {
+                    sb.append(obj.getClass().getCanonicalName() + " -> " + JsonUtil.toJSONString(obj) + "\n");
+                }
             }
         } else {
             sb.append("args are empty");
         }
         sb.append("\n");
-        LogUtil.log(sb.toString());
+        LogUtil.info_log(sb.toString());
     }
 }

@@ -2,22 +2,21 @@ package com.andrOday.appruntimeviewer.util;
 
 import android.os.Handler;
 import android.os.HandlerThread;
+import com.alibaba.fastjson.JSON;
 import com.andrOday.appruntimeviewer.RunTimeViewer;
+import com.andrOday.appruntimeviewer.data.ProClass;
+import org.apache.commons.io.FileUtils;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 
 public class ConfigUtil {
 
-    public static final String CONFIG = "runtime.cfg";
+    public static final String CONFIG = "config.json";
 
-    public static List<List<String>> methods = new ArrayList<List<String>>();
+    public static List<ProClass> proClasses = new ArrayList<ProClass>();
 
     public static long LAST_PARSED_TIME = 0;
 
@@ -50,41 +49,16 @@ public class ConfigUtil {
         if (hasConfig()) {
             File file = getConfigFile();
             LAST_PARSED_TIME = file.lastModified();
-            methods.clear();
-            LogUtil.log("~~~~parse config file start~~~~");
+            proClasses.clear();
+            LogUtil.event_log("~~~~parse config file start~~~~");
             try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-                String line = br.readLine();
-                while (line != null && !line.trim().equals("")) {
-                    String[] parts = line.trim().split(" ");
-                    if (parts.length < 3) {
-                        LogUtil.log("config error,at least 3 parts:" + line);
-                    } else {
-                        putIfNotExist(methods, Arrays.asList(parts));
-                        LogUtil.log("parse method:" + Arrays.asList(parts));
-                        line = br.readLine();
-                    }
-                }
+                String content = FileUtils.readFileToString(file);
+                proClasses = JSON.parseArray(content, ProClass.class);
             } catch (Exception e) {
-                LogUtil.log("parse config file error:");
-                e.printStackTrace(LogUtil.logWriter);
+                LogUtil.event_log("parse config file error:");
+                e.printStackTrace(LogUtil.eventWriter);
             }
-            LogUtil.log("~~~~parse config file end~~~~");
-        }
-    }
-
-    public static void putIfNotExist(List<List<String>> lists, List<String> target) {
-        boolean exist = false;
-        String joinTarget = CollectionUtil.join(target, ",");
-        for (List<String> it : lists) {
-            String joinIt = CollectionUtil.join(it, ",");
-            if (joinIt.equals(joinTarget)) {
-                exist = true;
-                break;
-            }
-        }
-        if (!exist) {
-            lists.add(target);
+            LogUtil.event_log("~~~~parse config file end~~~~");
         }
     }
 
@@ -92,7 +66,7 @@ public class ConfigUtil {
 
         @Override
         public void run() {
-            LogUtil.log("start loop checker");
+            LogUtil.event_log("start loop checker");
             while (true) {
                 File configFile = getConfigFile();
                 if (configFile != null) {

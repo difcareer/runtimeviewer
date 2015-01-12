@@ -9,6 +9,7 @@ import de.robv.android.xposed.XC_MethodHook;
 public class PrintMethodStacksHook extends XC_MethodHook {
 
     protected void beforeHookedMethod(MethodHookParam param) {
+        LogUtil.info_log("Before method execute,stacks:");
         LogUtil.printStack();
     }
 }
