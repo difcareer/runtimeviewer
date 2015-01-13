@@ -1,6 +1,5 @@
 package com.andrOday.appruntimeviewer.util;
 
-import android.util.Log;
 import com.andrOday.appruntimeviewer.RunTimeViewer;
 
 import java.io.File;
@@ -10,8 +9,6 @@ import java.text.SimpleDateFormat;
 
 
 public class LogUtil {
-
-    public static final String TAG = "RuntimeViewer";
 
     public static final String event_log = "event.log";
 
@@ -67,7 +64,7 @@ public class LogUtil {
                         eventWriter.flush();
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "write to log file error", e);
+                    e.printStackTrace(LogUtil.eventWriter);
                 }
             } else {
                 try {
@@ -78,7 +75,7 @@ public class LogUtil {
                         infoWriter.flush();
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "write to log file error", e);
+                    e.printStackTrace(LogUtil.eventWriter);
                 }
             }
         }

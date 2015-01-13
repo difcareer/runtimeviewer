@@ -20,34 +20,37 @@ public class PrintFieldsHook extends XC_MethodHook {
         Object object = param.thisObject;
         StringBuilder sb = new StringBuilder();
         sb.append("Before method execute,this object's fields:\n");
-        int count = 0;
-        if (object != null) {
-            Class clazz = object.getClass();
-            while (clazz != null) {
-                Field[] f_ds = clazz.getDeclaredFields();
-                for (Field it : f_ds) {
-                    it.setAccessible(true);
-                    for (String target : fields) {
-                        String f_name = it.getName();
-                        if (target.equals(f_name)) {
-                            try {
-                                sb.append(target + "=" + JsonUtil.toJSONString(it.get(object)) + "\n");
-                            } catch (Exception e) {
-                                sb.append(target + "=" + "error\n");
-                                XposedBridge.log(e);
+        if (fields == null) {
+            sb.append("not config fields\n");
+        } else {
+            int count = 0;
+            if (object != null) {
+                Class clazz = object.getClass();
+                while (clazz != null) {
+                    Field[] f_ds = clazz.getDeclaredFields();
+                    for (Field it : f_ds) {
+                        it.setAccessible(true);
+                        for (String target : fields) {
+                            String f_name = it.getName();
+                            if (target.equals(f_name)) {
+                                try {
+                                    sb.append(target + "=" + JsonUtil.toJSONString(it.get(object)) + "\n");
+                                } catch (Exception e) {
+                                    sb.append(target + "=" + "error\n");
+                                    XposedBridge.log(e);
+                                }
+                                count++;
                             }
-                            count++;
+                        }
+                        if (count == fields.size()) {
+                            break;
                         }
                     }
-                    if (count == fields.size()) {
-                        break;
-                    }
+                    //向上查找
+                    clazz = clazz.getSuperclass();
                 }
-                //向上查找
-                clazz = clazz.getSuperclass();
             }
         }
-        sb.append("\n");
         LogUtil.info_log(sb.toString());
     }
 }

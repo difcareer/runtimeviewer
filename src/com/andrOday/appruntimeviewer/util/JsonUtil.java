@@ -11,7 +11,7 @@ public class JsonUtil {
         try {
             return JSON.toJSONString(object);
         } catch (Exception e) {
-            return "json error";
+            return ReflectUtil.toString(object);
         }
     }
 }
